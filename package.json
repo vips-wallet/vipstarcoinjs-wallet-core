@@ -1,0 +1,24 @@
+{
+  "name": "vipstarcoinjs-wallet-core",
+  "version": "0.0.1",
+  "description": "VIPSTARCOIN Javascript wallet core",
+  "main": "./src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Koutarou Tanaka <from.kyushu.island@gmail.com> (https://github.com/fkfk)",
+  "license": "GPLv3",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vips-wallet/vipstarcoinjs-wallet-core.git"
+  },
+  "dependencies": {
+    "axios": "^0.18.0",
+    "bignumber.js": "^7.0.2",
+    "bip21": "^2.0.2",
+    "bip39": "^2.5.0",
+    "bitcoinjs-lib": "^3.3.2",
+    "bitcoinjs-lib-vips": "git://github.com/vips-wallet/bitcoinjs-lib-vips.git#backports/v3.3.2",
+    "coinselect": "^3.1.11"
+  }
+}

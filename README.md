@@ -1,0 +1,2 @@
+VIPSTARCOIN JavaScript Wallet Core
+==================================
