@@ -13,7 +13,7 @@ function encode (message) {
 }
 
 function decode (hex) {
-  return script.nullData.output.decode(new Buffer(hex, 'hex')).toString('utf8')
+  return script.nullData.output.decode(Buffer.from(hex, 'hex')).toString('utf8')
 }
 
 function isValidMessage (message) {
