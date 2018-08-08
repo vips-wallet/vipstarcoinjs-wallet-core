@@ -58,11 +58,14 @@ const GAP_LIMIT = 20
 
 const OP_RETURN_BYTES = 80
 
+const OPS = require('vipstarcoin-opcodes')
+
 module.exports = {
   NETWORKS,
   API_BASEURLS,
   COIN_TYPE,
   COINBASE_MATURITY,
   GAP_LIMIT,
-  OP_RETURN_BYTES
+  OP_RETURN_BYTES,
+  OPS
 }

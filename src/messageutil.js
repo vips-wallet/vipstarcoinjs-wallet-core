@@ -5,15 +5,22 @@ const {
   Buffer
 } = require('safe-buffer')
 const {
-  OP_RETURN_BYTES
+  OP_RETURN_BYTES,
+  OPS
 } = require('./const')
 
 function encode (message) {
-  return script.nullData.output.encode(Buffer.from(message, 'utf8'))
+  return script.compile([OPS.OP_RETURN, Buffer.from(message, 'utf8')])
 }
 
 function decode (hex) {
-  return script.nullData.output.decode(Buffer.from(hex, 'hex')).toString('utf8')
+  let decompiled = script.decompile(Buffer.from(hex, 'hex'))
+  let index = decompiled.indexOf(OPS.OP_RETURN)
+  if (index > -1 && Buffer.isBuffer(decompiled[index + 1])) {
+    return decompiled[index + 1].toString('utf8')
+  } else {
+    return undefined
+  }
 }
 
 function isValidMessage (message) {
