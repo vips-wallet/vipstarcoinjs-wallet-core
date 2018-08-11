@@ -49,7 +49,7 @@ class BaseAccount {
       type: this.type,
       privkey: this.privkey,
       pubkey: this.pubkey,
-      api: this.api.constructor.name,
+      api: this.api.name,
       address_index: this.addressIndex,
       addresses: this.addresses
     }

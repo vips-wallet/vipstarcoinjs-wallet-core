@@ -9,6 +9,7 @@ const {
 
 class InsightAPI {
   constructor (network, defaultTimeout = 3000) {
+    this.name = 'InsightAPI'
     this.network = network
     this.defaultTimeout = defaultTimeout
   }
