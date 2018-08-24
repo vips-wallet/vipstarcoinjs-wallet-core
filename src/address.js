@@ -20,7 +20,7 @@ function isValidAddress (addr, network) {
   } catch (e) {}
 
   if (decode) {
-    return (decode.version === network.pubKeyHash)
+    return (decode.version === network.pubKeyHash || decode.version === network.scriptHash)
   } else {
     try {
       decode = address.fromBech32(addr)
