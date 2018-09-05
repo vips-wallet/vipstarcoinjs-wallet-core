@@ -4,6 +4,7 @@ const cryptoUtils = require('../utils/crypto')
 const axios = require('axios')
 const {BigNumber} = require('bignumber.js')
 const coinSelect = require('coinselect')
+const bitcoinMessage = require('bitcoinjs-message')
 const {
   HDNode,
   script
@@ -245,6 +246,21 @@ class BaseAccount {
 
   signTransaction () {
 
+  }
+
+  signMessage (change, index, message, password) {
+    let pair = this.getNode(password).derive(change).derive(index).keyPair
+    let sign = bitcoinMessage.sign(message, pair.d.toBuffer(32), pair.compressed, NETWORKS[this.network].messagePrefix)
+    return sign.toString('base64')
+  }
+
+  signMessageWithAddress(address, message, password) {
+    let addressPair = this.findAddressPair(address)
+    return this.signMessage((address === addressPair.external ? 0 : 1), addressPair.index, message, password)
+  }
+
+  verifySignedMessage (message, address, sign) {
+    return bitcoinMessage.verify(message, address, sign, NETWORKS[this.network].messagePrefix)
   }
 
   getBalanceDetail (addresses = [], withUTXO = false) {
