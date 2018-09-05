@@ -1,7 +1,7 @@
 const NETWORKS = {
   mainnet: {
     name: 'mainnet',
-    messagePrefix: '\x18VIPSTARCOIN Signed Message:\n',
+    messagePrefix: '\x1cVIPSTARCOIN Signed Message:\n',
     bech32: "bc",
     bip32: {
       public: 0x0488b21e,
@@ -13,7 +13,7 @@ const NETWORKS = {
   },
   testnet: {
     name: 'testnet',
-    messagePrefix: '\x18VIPSTARCOIN Signed Message:\n',
+    messagePrefix: '\x1cVIPSTARCOIN Signed Message:\n',
     bech32: "tb",
     bip32: {
       public: 0x043587cf,
@@ -25,7 +25,7 @@ const NETWORKS = {
   },
   regtest: {
     name: 'regtest',
-    messagePrefix: '\x18VIPSTARCOIN Signed Message:\n',
+    messagePrefix: '\x1cVIPSTARCOIN Signed Message:\n',
     bech32: "tb",
     bip32: {
       public: 0x043587cf,
