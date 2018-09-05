@@ -19,6 +19,7 @@
     "bip39": "^2.5.0",
     "bitcoinjs-lib": "^3.3.2",
     "bitcoinjs-lib-vips": "vips-wallet/bitcoinjs-lib-vips.git#backports/v3.3.2",
+    "bitcoinjs-message": "^2.0.0",
     "coinselect": "^3.1.11",
     "vipstarcoin-opcodes": "^1.0.1"
   }
