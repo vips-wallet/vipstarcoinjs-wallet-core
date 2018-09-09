@@ -51,7 +51,6 @@ function parseRate (message) {
 
 function parseRateV1 (message) {
   let sp = message.split('|')
-  console.log(sp)
   return {
     rate: new BigNumber(sp[3]).toNumber(),
     currency: sp[2]
