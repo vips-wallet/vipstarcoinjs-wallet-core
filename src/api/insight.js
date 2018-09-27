@@ -3,15 +3,17 @@ const {BigNumber} = require('bignumber.js')
 
 const {
   API_BASEURLS,
+  API_DEFAULT_TIMEOUT_MSEC,
   COIN_TYPE,
   COINBASE_MATURITY
 } = require('../const')
 
 class InsightAPI {
-  constructor (network, defaultTimeout = 3000) {
+  constructor (network, opt = {}) {
     this.name = 'InsightAPI'
     this.network = network
-    this.defaultTimeout = defaultTimeout
+    this.defaultTimeout = (opt.defaultTimeout > 0) ? opt.defaultTimeout : API_DEFAULT_TIMEOUT_MSEC
+    this.apiList = (opt.apiList && opt.apiList.length > 0) ? opt.apiList : API_BASEURLS[network]
   }
 
   getBalanceDetail (addresses = [], withUTXO = false) {
@@ -132,10 +134,10 @@ class InsightAPI {
       opt.timeout = this.defaultTimeout
     }
     opt.json = true
-    let uri = `${API_BASEURLS[this.network][apiIndex]}${path}`
+    let uri = `${this.apiList[apiIndex]}${path}`
     return axios.get(uri, opt).catch(error => {
       if (count === max) {
-        if (apiIndex === (API_BASEURLS[this.network].length - 1)) {
+        if (apiIndex === (this.apiList.length - 1)) {
           throw error
         } else {
           return this.requestAPI(path, opt, ++apiIndex, 0, max)
@@ -150,9 +152,9 @@ class InsightAPI {
       opt.timeout = this.defaultTimeout
     }
     opt.json = true
-    let uri = `${API_BASEURLS[this.network][apiIndex]}${path}`
+    let uri = `${this.apiList[apiIndex]}${path}`
     return axios.post(uri, opt).catch(error => {
-        if (apiIndex === (API_BASEURLS[this.network].length - 1)) {
+        if (apiIndex === (this.apiList.length - 1)) {
           throw error
         } else {
           return this.postAPI(path, opt, ++apiIndex, 0, max)

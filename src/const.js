@@ -51,6 +51,8 @@ const API_BASEURLS = {
   ]
 }
 
+const API_DEFAULT_TIMEOUT_MSEC = 3000
+
 const COIN_TYPE = 1919
 
 const COINBASE_MATURITY = 500
@@ -64,6 +66,7 @@ const OPS = require('vipstarcoin-opcodes')
 module.exports = {
   NETWORKS,
   API_BASEURLS,
+  API_DEFAULT_TIMEOUT_MSEC,
   COIN_TYPE,
   COINBASE_MATURITY,
   GAP_LIMIT,
