@@ -64,7 +64,7 @@ class BaseAccount {
     return HDNode.fromBase58(cryptoUtils.decrypt(this.privkey, password), NETWORKS[this.network])
   }
 
-  addNewAddress (scan = true) {
+  async addNewAddress (scan = true) {
     let index = this.addressIndex++
     let newAddress = {
       index: index,
@@ -75,62 +75,55 @@ class BaseAccount {
     this.addresses.push(newAddress)
 
     if (scan) {
-      this.getTXsAll([newAddress.external]).then(txs => {
-        this.addresses[index].used = (txs.length !== 0)
-      })
+      const txs = await this.getTXsAll([newAddress.external])
+      this.addresses[index].used = (txs.length !== 0)
     }
 
     return newAddress
   }
 
-  rescanAddress () {
-    return new Promise((resolve, reject) => {
-      let searchAddresses = []
-      let latestUsedAddressPair = [].concat(this.addresses).reverse().find(address => address.used === true)
-      let unusedIndex = 0
-      if (latestUsedAddressPair !== undefined) {
-        unusedIndex = latestUsedAddressPair.index + 1
+  async rescanAddress () {
+    let searchAddresses = []
+    let latestUsedAddressPair = [].concat(this.addresses).reverse().find(address => address.used === true)
+    let unusedIndex = 0
+    if (latestUsedAddressPair !== undefined) {
+      unusedIndex = latestUsedAddressPair.index + 1
+    }
+    for(let i = unusedIndex; i < (unusedIndex + GAP_LIMIT); i++) {
+      let addressPair = []
+      if (i >= this.addressIndex) {
+        addressPair = await this.addNewAddress(false)
+      } else {
+        addressPair = this.addresses[i]
       }
-      for(let i = unusedIndex; i < (unusedIndex + GAP_LIMIT); i++) {
-        let addressPair = []
-        if (i >= this.addressIndex) {
-          addressPair = this.addNewAddress(false)
-        } else {
-          addressPair = this.addresses[i]
-        }
-        searchAddresses.push(addressPair.external)
-      }
-      resolve(searchAddresses)
-    }).then(searchAddresses => {
-      return this.getTXsAll(searchAddresses).then(txs => {
-        if (txs.length === 0) {
-          return true
-        } else {
-          find: {
-            txs.forEach(tx => {
-              txs.forEach(vin => {
-                if (searchAddresses.includes(vin.addr)) {
-                  let addressPair = this.findAddressPair(vin.addr)
-                  this.addresses[addressPair.index].used = true
-                }
-              })
+      searchAddresses.push(addressPair.external)
+    }
 
-              tx.vout.forEach(vout => {
-                if (vout.scriptPubKey.addresses) {
-                  vout.scriptPubKey.addresses.forEach(addr => {
-                    if (searchAddresses.includes(addr)) {
-                      let addressPair = this.findAddressPair(addr)
-                      this.addresses[addressPair.index].used = true
-                    }
-                  })
-                }
-              })
+    const txs = await this.getTXsAll(searchAddresses)
+    if (txs.length === 0) {
+      return true
+    } else {
+      txs.forEach(tx => {
+        txs.forEach(vin => {
+          if (searchAddresses.includes(vin.addr)) {
+            let addressPair = this.findAddressPair(vin.addr)
+            this.addresses[addressPair.index].used = true
+          }
+        })
+
+        tx.vout.forEach(vout => {
+          if (vout.scriptPubKey.addresses) {
+            vout.scriptPubKey.addresses.forEach(addr => {
+              if (searchAddresses.includes(addr)) {
+                let addressPair = this.findAddressPair(addr)
+                this.addresses[addressPair.index].used = true
+              }
             })
           }
-          return this.rescanAddress()
-        }
+        })
       })
-    })
+      return await this.rescanAddress()
+    }
   }
 
   chooseAPIClass (name) {
@@ -169,7 +162,7 @@ class BaseAccount {
     return this.addresses.find(addr => (addr.external === address || addr.change === address))
   }
 
-  buildTransactionData (to, amount, opt = {}) {
+  async buildTransactionData (to, amount, opt = {}) {
     let txBuilder = new TransactionBuilder(NETWORKS[this.network])
     txBuilder.setVersion(2)
     let feeRate = null
@@ -179,65 +172,65 @@ class BaseAccount {
     if (amount.constructor.name !== 'BigNumber') {
       throw new Error("could not convert amount to BigNumber")
     }
-    return this.estimateFeePerByte().then(rate => {
-      if (opt.feeRate !== undefined) {
-        feeRate = (new BigNumber(opt.feeRate)).multipliedBy(1e8).dp(0)
-      } else {
-        feeRate = rate.multipliedBy(1e8).dp(0)
-      }
-      return this.getUTXOs()
-    }).then(utxos => {
-      let satoshis = amount.multipliedBy(1e8)
-      let input =[{ address: to, value: satoshis.toNumber() }]
-      let addressPath = []
 
-      if (typeof opt.extra_data === 'string') {
-        let encoded = script.nullData.output.encode(Buffer.from(opt.message, 'utf8'))
-        input.push({
-          address: encoded,
-          value: 0
-        })
-      } else if (Array.isArray(opt.extra_data)) {
-        input = input.concat(opt.extra_data)
-      }
+    const rate = await this.estimateFeePerByte()
+    if (opt.feeRate !== undefined) {
+      feeRate = (new BigNumber(opt.feeRate)).multipliedBy(1e8).dp(0)
+    } else {
+      feeRate = rate.multipliedBy(1e8).dp(0)
+    }
 
-      let { inputs, outputs, fee } = coinSelect(utxos, input, feeRate.toNumber())
-      if (inputs === undefined || outputs === undefined) {
-        throw new Error("could not find UTXOs")
-      }
+    const utxos = await this.getUTXOs()
+    let satoshis = amount.multipliedBy(1e8)
+    let input =[{ address: to, value: satoshis.toNumber() }]
+    let addressPath = []
 
-      let senderAddressPair = this.findAddressPair(inputs[0].address)
-      if (senderAddressPair === undefined) {
-        throw new Error("could not find sender address")
-      }
-
-      let vinSum = new BigNumber(0)
-      inputs.forEach(input => {
-        let vin = txBuilder.addInput(input.txid, input.vout)
-        let addressPair = this.findAddressPair(input.address)
-        let change = (addressPair.external === input.address ? 0 : 1)
-        txBuilder.inputs[vin].value = input.value
-        vinSum = vinSum.plus(input.satoshis)
-        addressPath.push({
-          change,
-          index: addressPair.index
-        })
+    if (typeof opt.extra_data === 'string') {
+      let encoded = script.nullData.output.encode(Buffer.from(opt.message, 'utf8'))
+      input.push({
+        address: encoded,
+        value: 0
       })
+    } else if (Array.isArray(opt.extra_data)) {
+      input = input.concat(opt.extra_data)
+    }
 
-      outputs.forEach(output => {
-        if (output.address === undefined) {
-          output.address = senderAddressPair.change
-        }
+    let { inputs, outputs, fee } = coinSelect(utxos, input, feeRate.toNumber())
+    if (inputs === undefined || outputs === undefined) {
+      throw new Error("could not find UTXOs")
+    }
 
-        let vout = txBuilder.addOutput(output.address, output.value)
+    let senderAddressPair = this.findAddressPair(inputs[0].address)
+    if (senderAddressPair === undefined) {
+      throw new Error("could not find sender address")
+    }
+
+    let vinSum = new BigNumber(0)
+    inputs.forEach(input => {
+      let vin = txBuilder.addInput(input.txid, input.vout)
+      let addressPair = this.findAddressPair(input.address)
+      let change = (addressPair.external === input.address ? 0 : 1)
+      txBuilder.inputs[vin].value = input.value
+      vinSum = vinSum.plus(input.satoshis)
+      addressPath.push({
+        change,
+        index: addressPair.index
       })
-
-      return {
-        txBuilder,
-        addressPath,
-        fee
-      }
     })
+
+    outputs.forEach(output => {
+      if (output.address === undefined) {
+        output.address = senderAddressPair.change
+      }
+
+      let vout = txBuilder.addOutput(output.address, output.value)
+    })
+
+    return {
+      txBuilder,
+      addressPath,
+      fee
+    }
   }
 
   generateRawContractTransaction (txBuilder, addressPath, password) {
@@ -263,66 +256,64 @@ class BaseAccount {
     return bitcoinMessage.verify(message, address, sign, NETWORKS[this.network].messagePrefix)
   }
 
-  getBalanceDetail (addresses = [], withUTXO = false) {
+  async getBalanceDetail (addresses = [], withUTXO = false) {
     if (addresses.length === 0) {
       addresses = this.addresses.reduce((acc, address) => acc.concat([address.external, address.change]), [])
     }
-    return this.api.getBalanceDetail(addresses, withUTXO)
+    return await this.api.getBalanceDetail(addresses, withUTXO)
   }
 
-  getBalance (addresses = []) {
+  async getBalance (addresses = []) {
     if (addresses.length === 0) {
       addresses = this.addresses.reduce((acc, address) => acc.concat([address.external, address.change]), [])
     }
-    return this.getBalanceDetail(addresses).then(info => {
-      return info.balance
-    })
+    const info = await this.getBalanceDetail(addresses)
+    return info.balance
   }
 
-  getUnconfirmedBalance (addresses = []) {
+  async getUnconfirmedBalance (addresses = []) {
     if (addresses.length === 0) {
       addresses = this.addresses.reduce((acc, address) => acc.concat([address.external, address.change]), [])
     }
-    return this.getBalanceDetail(addresses).then(info => {
-      return info.unconfirmedBalance
-    })
+    const info = await this.getBalanceDetail(addresses)
+    return info.unconfirmedBalance
   }
 
-  getTXsAll (addresses = [], txs = [], from = 0, to = 10) {
+  async getTXsAll (addresses = [], txs = [], from = 0, to = 10) {
     if (addresses.length === 0) {
       addresses = this.addresses.reduce((acc, address) => acc.concat([address.external, address.change]), [])
     }
-    return this.api.getTXsAll(addresses, txs, from, to)
+    return await this.api.getTXsAll(addresses, txs, from, to)
   }
 
-  getTXs (addresses = [], from = 0, to = 10) {
+  async getTXs (addresses = [], from = 0, to = 10) {
     if (addresses.length === 0) {
       addresses = this.addresses.reduce((acc, address) => acc.concat([address.external, address.change]), [])
     }
-    return this.api.getTXs(addresses, from, to)
+    return await this.api.getTXs(addresses, from, to)
   }
 
-  getUTXOs (addresses = [], allow_confirmations = 1) {
+  async getUTXOs (addresses = [], allow_confirmations = 1) {
     if (addresses.length === 0) {
       addresses = this.addresses.reduce((acc, address) => acc.concat([address.external, address.change]), [])
     }
-    return this.api.getUTXOs(addresses, allow_confirmations)
+    return await this.api.getUTXOs(addresses, allow_confirmations)
   }
 
-  callContract (address, data) {
-    return this.api.callContract(address, data)
+  async callContract (address, data) {
+    return await this.api.callContract(address, data)
   }
 
-  sendRawTransaction (tx) {
-    return this.api.sendRawTransaction(tx)
+  async sendRawTransaction (tx) {
+    return await this.api.sendRawTransaction(tx)
   }
 
-  estimateFee (nblocks = 6) {
-    return this.api.estimateFee(nblocks)
+  async estimateFee (nblocks = 6) {
+    return await this.api.estimateFee(nblocks)
   }
 
-  estimateFeePerByte (nblocks = 6) {
-    return this.api.estimateFeePerByte(nblocks)
+  async estimateFeePerByte (nblocks = 6) {
+    return await this.api.estimateFeePerByte(nblocks)
   }
 }
 
