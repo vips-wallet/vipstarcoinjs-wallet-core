@@ -34,6 +34,27 @@ function isValidAddress (addr, network) {
   return false
 }
 
+function getHexAddress (addr, network) {
+  network = network || NETWORKS.mainnet
+
+  let decode = null
+  try {
+    decode = address.fromBase58Check(addr)
+  } catch (e) {}
+
+  if (decode && decode.version === network.pubKeyHash) {
+    console.log(decode)
+    return decode.hash.toString('hex')
+  }
+
+  return false
+}
+
+function fromHexAddress (hexAddr, network) {
+  network = network || NETWORKS.mainnet
+  return address.toBase58Check(Buffer.from(hexAddr, 'hex'), network.pubKeyHash)
+}
+
 module.exports = {
   fromBase58Check: address.fromBase58Check,
   fromBech32: address.fromBech32,
@@ -41,5 +62,7 @@ module.exports = {
   toBase58Check: address.toBase58Check,
   toBech32: address.toBech32,
   toOutputScript: toOutputScript,
-  isValidAddress: isValidAddress
+  isValidAddress: isValidAddress,
+  getHexAddress: getHexAddress,
+  fromHexAddress: fromHexAddress
 }
