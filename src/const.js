@@ -63,6 +63,23 @@ const OP_RETURN_BYTES = 80
 
 const OPS = require('vipstarcoin-opcodes')
 
+const TOKEN_METHOD_HASHES = {
+  ERC20: {
+    "allowance(address,address)": "dd62ed3e",
+    "approve(address,uint256)": "095ea7b3",
+    "balanceOf(address)": "70a08231",
+    "decimals()": "313ce567",
+    "name()": "06fdde03",
+    "symbol()": "95d89b41",
+    "totalSupply()": "18160ddd",
+    "transfer(address,uint256)": "a9059cbb",
+    "transferFrom(address,address,uint256)": "23b872dd",
+    "Transfer(address,address,uint256)": "ddf252ad",
+    "Approval(address,address,uint256)": "8c5be1e5",
+    "version()": "54fd4d50"
+  }
+}
+
 module.exports = {
   NETWORKS,
   API_BASEURLS,
@@ -71,5 +88,6 @@ module.exports = {
   COINBASE_MATURITY,
   GAP_LIMIT,
   OP_RETURN_BYTES,
-  OPS
+  OPS,
+  TOKEN_METHOD_HASHES
 }
