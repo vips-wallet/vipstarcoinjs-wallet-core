@@ -85,6 +85,15 @@ class InsightAPI {
     })
   }
 
+  async getTokenBalance (addresses = []) {
+    const result = await this.requestAPI(`/erc20/balances`, {
+      params: {
+        balanceAddress: addresses.join(',')
+      }
+    })
+    return result.data
+  }
+
   async callContract (address, data) {
     const result = await this.requestAPI(`/contracts/${address}/hash/${data}/call`)
     return result.data

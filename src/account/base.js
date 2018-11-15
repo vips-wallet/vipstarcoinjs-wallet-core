@@ -300,6 +300,10 @@ class BaseAccount {
     return await this.api.getUTXOs(addresses, allow_confirmations)
   }
 
+  async getTokenBalance (addresses = []) {
+    return Promise.reject(new Error('This account is not BIP44 Account'))
+  }
+
   async callContract (address, data) {
     return await this.api.callContract(address, data)
   }

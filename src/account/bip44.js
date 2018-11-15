@@ -19,6 +19,13 @@ class BIP44Account extends BaseAccount {
     })
     return txBuilder.build()
   }
+
+  async getTokenBalance (addresses = []) {
+    if (addresses.length === 0) {
+      addresses = this.addresses.reduce((acc, address) => acc.concat([address.external, address.change]), [])
+    }
+    return await this.api.getTokenBalance(addresses)
+  }
 }
 
 module.exports = BIP44Account
