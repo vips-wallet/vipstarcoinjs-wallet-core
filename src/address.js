@@ -43,7 +43,6 @@ function getHexAddress (addr, network) {
   } catch (e) {}
 
   if (decode && decode.version === network.pubKeyHash) {
-    console.log(decode)
     return decode.hash.toString('hex')
   }
 
