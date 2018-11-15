@@ -26,6 +26,20 @@ class BIP44Account extends BaseAccount {
     }
     return await this.api.getTokenBalance(addresses)
   }
+
+  async getTokenTXsAll (contract_address, addresses = [], txs = [], from = 0, to = 10) {
+    if (addresses.length === 0) {
+      addresses = this.addresses.reduce((acc, address) => acc.concat([address.external, address.change]), [])
+    }
+    return await this.api.getTokenTXsAll(contract_address, addresses, txs, from, to)
+  }
+
+  async getTokenTXs (contract_address, addresses = [], from = 0, to = 100) {
+    if (addresses.length === 0) {
+      addresses = this.addresses.reduce((acc, address) => acc.concat([address.external, address.change]), [])
+    }
+    return await this.api.getTokenTXs(contract_address, addresses, from, to)
+  }
 }
 
 module.exports = BIP44Account

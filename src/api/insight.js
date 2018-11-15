@@ -8,6 +8,8 @@ const {
   COINBASE_MATURITY
 } = require('../const')
 
+const addressUtil = require('../address')
+
 class InsightAPI {
   constructor (network, opt = {}) {
     this.name = 'InsightAPI'
@@ -89,6 +91,38 @@ class InsightAPI {
     const result = await this.requestAPI(`/erc20/balances`, {
       params: {
         balanceAddress: addresses.join(',')
+      }
+    })
+    return result.data
+  }
+
+  async getTokenTXsAll (contract_address, addresses = [], txs = [], from = 0, to = 100) {
+    if (!addressUtil.isValidAddress(contract_address)) {
+      contract_address = addressUtil.fromContractAddress(contract_address)
+    }
+    const result = await this.requestAPI(`/tokens/${contract_address}/transactions`, {
+      params: {
+        addresses: addresses.join(',')
+      }
+    })
+    const list = result.data
+    txs = txs.concat(list.items)
+    if (txs.length < list.count) {
+      let add = list.count - txs.length
+      if (add > 100) add = 100
+      return await this.getTokenTXsAll(contract_address, addresses, txs, txs.length, txs.length + add)
+    } else {
+      return txs
+    }
+  }
+
+  async getTokenTXs (contract_address, addresses = [], from = 0, to = 100) {
+    if (!addressUtil.isValidAddress(contract_address)) {
+      contract_address = addressUtil.fromContractAddress(contract_address)
+    }
+    const result = await this.requestAPI(`/tokens/${contract_address}/transactions`, {
+      params: {
+        addresses: addresses.join(',')
       }
     })
     return result.data

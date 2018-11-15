@@ -304,6 +304,14 @@ class BaseAccount {
     return Promise.reject(new Error('This account is not BIP44 Account'))
   }
 
+  async getTokenTXsAll (contract_address, addresses = [], txs = [], from = 0, to = 100) {
+    return Promise.reject(new Error('This account is not BIP44 Account'))
+  }
+
+  async getTokenTXs (contract_address, addresses = [], from = 0, to = 100) {
+    return Promise.reject(new Error('This account is not BIP44 Account'))
+  }
+
   async callContract (address, data) {
     return await this.api.callContract(address, data)
   }
