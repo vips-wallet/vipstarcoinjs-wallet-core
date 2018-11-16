@@ -28,7 +28,7 @@ class BaseAccount {
     this.label = config.label
     this.type = config.type
     this.legasySegwit = (config.type === 49)
-    this.nativeSegwit = (config.type === 173)
+    this.nativeSegwit = (config.type === 84)
     this.privkey = config.privkey
     this.pubkey = config.pubkey
     this.defaultAddress = config.defaultAddress || 0
