@@ -63,6 +63,10 @@ const OP_RETURN_BYTES = 80
 
 const OPS = require('vipstarcoin-opcodes')
 
+const DEFAULT_GAS_LIMIT = 250000
+
+const DEFAULT_GAS_PRICE = 40
+
 const TOKEN_METHOD_HASHES = {
   ERC20: {
     "allowance(address,address)": "dd62ed3e",
@@ -89,5 +93,7 @@ module.exports = {
   GAP_LIMIT,
   OP_RETURN_BYTES,
   OPS,
+  DEFAULT_GAS_LIMIT,
+  DEFAULT_GAS_PRICE,
   TOKEN_METHOD_HASHES
 }
