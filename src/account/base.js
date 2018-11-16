@@ -233,6 +233,10 @@ class BaseAccount {
     }
   }
 
+  async buildSendToContractTransactionData (contract_address, sender_address, data, opt) {
+    return Promise.reject(new Error('This account is not BIP44 Account'))
+  }
+
   generateRawContractTransaction (txBuilder, addressPath, password) {
     throw new Error("could not sign")
   }
