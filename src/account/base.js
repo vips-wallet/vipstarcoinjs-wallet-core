@@ -180,10 +180,21 @@ class BaseAccount {
       feeRate = rate.multipliedBy(1e8).dp(0)
     }
 
-    const utxos = await this.getUTXOs()
+    const allUTXOs = await this.getUTXOs()
+    let utxos = []
     let satoshis = amount.multipliedBy(1e8)
     let input =[{ address: to, value: satoshis.toNumber() }]
     let addressPath = []
+
+    if (Array.isArray(opt.utxos)) {
+      if (opt.utxos.every(utxo => allUTXOs.some(u => (u.txid === utxo.txid && u.vout === utxo.vout)))) {
+        utxos = opt.utxos
+      } else {
+        throw new Error("could not find specified UTXO")
+      }
+    } else {
+      utxos = allUTXOs
+    }
 
     if (typeof opt.extra_data === 'string') {
       let encoded = script.nullData.output.encode(Buffer.from(opt.message, 'utf8'))

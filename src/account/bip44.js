@@ -81,12 +81,23 @@ class BIP44Account extends BaseAccount {
       OPS.OP_CALL
     ])
 
-    const utxos = await this.getUTXOs()
+    const allUTXOs = await this.getUTXOs()
     const satoshis = amount.multipliedBy(1e8)
     const input = [
       {value: gasLimitFee.toNumber()},
       {script: callScript, value: satoshis.toNumber()}
     ]
+
+    let utxos = []
+    if (Array.isArray(opt.utxos)) {
+      if (opt.utxos.every(utxo => allUTXOs.some(u => (u.txid === utxo.txid && u.vout === utxo.vout)))) {
+        utxos = opt.utxos
+      } else {
+        throw new Error("could not find specified UTXO")
+      }
+    } else {
+      utxos = allUTXOs
+    }
 
     let { inputs, outputs, fee } = coinSelect(utxos, input, feeRate.toNumber())
     if (inputs === undefined || outputs === undefined) {
@@ -97,16 +108,18 @@ class BIP44Account extends BaseAccount {
     if (senderAddressPair === undefined) {
       throw new Error("could not find sender address")
     }
-    const addressPath = [{
-      change: (senderAddressPair.external === sender_address ? 0 : 1),
-      index: senderAddressPair.index
-    }]
 
     let vinSum = new BigNumber(0)
+    let addressPath = []
     inputs.forEach(input => {
       const vin = txBuilder.addInput(input.txid, input.vout)
-      txBuilder.inputs[vin].value = input.value
+      const addressPair = this.findAddressPair(input.address)
+      const change = (addressPair.external === input.address ? 0 : 1)
       vinSum = vinSum.plus(input.satoshis)
+      addressPath.push({
+        change,
+        index: addressPair.index
+      })
     })
 
     const change = vinSum.minus(fee).minus(gasLimitFee).minus(satoshis).toNumber()
