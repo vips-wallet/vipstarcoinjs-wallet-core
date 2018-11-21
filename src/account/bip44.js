@@ -72,7 +72,8 @@ class BIP44Account extends BaseAccount {
     const rate = await this.estimateFeePerByte()
     const feeRate = ((opt.feeRate) ? (new BigNumber(opt.feeRate)) : rate).multipliedBy(1e8).dp(0)
     const callScript = script.compile([
-      OPS.OP_VERSION,
+      0x01,
+      0x04,
       scriptNumber.encode(gasLimit),
       scriptNumber.encode(gasPrice),
       Buffer.from(data, 'hex'),
