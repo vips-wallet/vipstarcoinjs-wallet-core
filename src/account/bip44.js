@@ -81,7 +81,7 @@ class BIP44Account extends BaseAccount {
       OPS.OP_CALL
     ])
 
-    const utxos = await this.getUTXOs([sender_address])
+    const utxos = await this.getUTXOs()
     const satoshis = amount.multipliedBy(1e8)
     const input = [
       {value: gasLimitFee.toNumber()},
