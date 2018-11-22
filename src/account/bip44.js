@@ -88,10 +88,40 @@ class BIP44Account extends BaseAccount {
       utxos = allUTXOs
     }
 
-    let { inputs, outputs, fee } = coinSelect(utxos, input, feeRate.toNumber())
-    if (inputs === undefined || outputs === undefined) {
-      throw new Error("could not find UTXOs")
+    let senderUTXOs = utxos.filter(utxo => utxo.address === sender_address)
+    let otherUTXOs = utxos.filter(utxo => utxo.address !== sender_address)
+
+    if (senderUTXOs.length === 0) {
+      throw new Error("could not find senderAddress UTXOs")
     }
+
+    let inputs = undefined
+    let outputs = undefined
+    let fee = 0
+    let useUTXOs = senderUTXOs
+    while (true) {
+      let selected = coinSelect(useUTXOs, input, feeRate.toNumber())
+      if (selected.inputs !== undefined && selected.outputs !== undefined) {
+        inputs = selected.inputs
+        outputs = selected.outputs
+        fee = selected.fee
+        break
+      } else if(otherUTXOs.length === 0) {
+        throw new Error("could not find UTXOs")
+      }
+      useUTXOs.push(otherUTXOs.shift())
+    }
+    inputs = inputs.sort((a, b) => {
+      if (a.address === sender_address && b.address === sender_address) {
+        return 0
+      } else if (a.address === sender_address) {
+        return -1
+      } else if (b.address === sender_address) {
+        return 1
+      } else {
+        return 0
+      }
+    })
 
     const senderAddressPair = this.findAddressPair(sender_address)
     if (senderAddressPair === undefined) {
