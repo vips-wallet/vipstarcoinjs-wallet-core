@@ -335,6 +335,10 @@ class BaseAccount {
     return await this.api.sendRawTransaction(tx)
   }
 
+  async getTransactionReceipt (txid) {
+    return await this.api.getTransactionReceipt(txid)
+  }
+
   async estimateFee (nblocks = 6) {
     return await this.api.estimateFee(nblocks)
   }

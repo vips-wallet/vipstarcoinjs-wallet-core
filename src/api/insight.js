@@ -138,6 +138,11 @@ class InsightAPI {
     return result.data
   }
 
+  async getTransactionReceipt (txid) {
+    const result = await this.requestAPI(`/txs/${txid}/receipt`)
+    return result.data
+  }
+
   async estimateFee (nblocks = 6) {
     const result = await this.requestAPI(`/utils/estimateFee`, {
       params: {
