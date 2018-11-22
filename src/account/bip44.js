@@ -60,7 +60,7 @@ class BIP44Account extends BaseAccount {
     const txBuilder = new TransactionBuilder(NETWORKS[this.network])
     txBuilder.setVersion(2)
 
-    const gasLimit = (opt.gasLimit) ? (new BigNumber(opt.gasLimit)).multipliedBy(1e8).dp(0) : new BigNumber(DEFAULT_GAS_LIMIT)
+    const gasLimit = new BigNumber(opt.gasLimit ? opt.gasLimit : DEFAULT_GAS_LIMIT)
     const gasPrice = (opt.gasPrice) ? (new BigNumber(opt.gasPrice)).multipliedBy(1e8).dp(0) : new BigNumber(DEFAULT_GAS_PRICE)
     const gasLimitFee = gasLimit.multipliedBy(gasPrice)
 
