@@ -2,10 +2,6 @@ const BaseAccount = require('./base')
 const {BigNumber} = require('bignumber.js')
 const coinSelect = require('coinselect')
 const {
-  script
-} = require('bitcoinjs-lib')
-const scriptNumber = require('bitcoinjs-lib/src/script_number')
-const {
   TransactionBuilder
 } = require('bitcoinjs-lib-vips')
 const {
@@ -14,6 +10,7 @@ const {
   DEFAULT_GAS_LIMIT,
   DEFAULT_GAS_PRICE
 } = require('../const')
+const contractUtil = require('../contract/util')
 
 class BIP44Account extends BaseAccount {
   constructor (config, network) {
@@ -71,15 +68,7 @@ class BIP44Account extends BaseAccount {
 
     const rate = await this.estimateFeePerByte()
     const feeRate = ((opt.feeRate) ? (new BigNumber(opt.feeRate)) : rate).multipliedBy(1e8).dp(0)
-    const callScript = script.compile([
-      0x01,
-      0x04,
-      scriptNumber.encode(gasLimit),
-      scriptNumber.encode(gasPrice),
-      Buffer.from(data, 'hex'),
-      Buffer.from(contract_address, 'hex'),
-      OPS.OP_CALL
-    ])
+    const callScript = contractUtil.compileContractScript(contract_address, data, {gasLimit, gasPrice})
 
     const allUTXOs = await this.getUTXOs()
     const satoshis = amount.multipliedBy(1e8)
