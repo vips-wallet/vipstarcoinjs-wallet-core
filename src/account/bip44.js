@@ -68,7 +68,7 @@ class BIP44Account extends BaseAccount {
 
     const rate = await this.estimateFeePerByte()
     const feeRate = ((opt.feeRate) ? (new BigNumber(opt.feeRate)) : rate).multipliedBy(1e8).dp(0)
-    const callScript = contractUtil.compileContractScript(contract_address, data, {gasLimit, gasPrice})
+    const callScript = contractUtil.compileContractScript(contract_address, data, {gasLimit, gasPrice: gasPrice.dividedBy(1e8)})
 
     const allUTXOs = await this.getUTXOs()
     const satoshis = amount.multipliedBy(1e8)
