@@ -85,7 +85,13 @@ class BIP44Account extends BaseAccount {
         throw new Error("could not find specified UTXO")
       }
     } else {
-      utxos = allUTXOs
+      utxos = allUTXOs.filter(utxo => {
+        if (utxo.isStakingLocked || utxo.isImmature) {
+          return false
+        } else {
+          return true
+        }
+      })
     }
 
     let senderUTXOs = utxos.filter(utxo => utxo.address === sender_address)
