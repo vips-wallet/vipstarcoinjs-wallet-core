@@ -28,6 +28,8 @@ class InsightAPI {
       if (utxo.confirmations) {
         if (utxo.isStakingLocked) {
           stakingBalance = stakingBalance.plus(utxo.satoshis)
+        } else if (utxo.isImmature) {
+          immatureBalance = immatureBalance.plus(utxo.satoshis)
         } else {
           balance = balance.plus(utxo.satoshis)
         }
@@ -38,6 +40,7 @@ class InsightAPI {
     let info = {
       balance: balance.dividedBy(1e8),
       unconfirmedBalance: unconfirmedBalance.dividedBy(1e8),
+      immatureBalance: immatureBalance.dividedBy(1e8),
       stakingBalance: stakingBalance.dividedBy(1e8)
     }
     if (withUTXO) {
@@ -81,6 +84,7 @@ class InsightAPI {
       utxo.value = utxo.satoshis
       utxo.hash = utxo.txid
       utxo.isStakingLocked = (utxo.isStake && utxo.confirmations < COINBASE_MATURITY)
+      utxo.isImmature = (utxo.isCoinBase && utxo.confirmations < COINBASE_MATURITY)
       return utxo
     }).filter(utxo => {
       return utxo.confirmations >= allow_confirmations
