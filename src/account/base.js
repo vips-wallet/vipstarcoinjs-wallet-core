@@ -180,7 +180,7 @@ class BaseAccount {
       feeRate = rate.multipliedBy(1e8).dp(0)
     }
 
-    const allUTXOs = await this.getUTXOs()
+    const allUTXOs = await this.getUTXOs([], opt.allow_confirmations || 1)
     let utxos = []
     let satoshis = amount.multipliedBy(1e8)
     let input =[{ address: to, value: satoshis.toNumber() }]
