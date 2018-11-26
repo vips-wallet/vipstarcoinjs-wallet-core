@@ -277,26 +277,26 @@ class BaseAccount {
     return bitcoinMessage.verify(message, address, sign, NETWORKS[this.network].messagePrefix)
   }
 
-  async getBalanceDetail (addresses = [], withUTXO = false) {
+  async getBalanceDetail (addresses = [], opt = {}) {
     if (addresses.length === 0) {
       addresses = this.addresses.reduce((acc, address) => acc.concat([address.external, address.change]), [])
     }
-    return await this.api.getBalanceDetail(addresses, withUTXO)
+    return await this.api.getBalanceDetail(addresses, opt)
   }
 
-  async getBalance (addresses = []) {
+  async getBalance (addresses = [], opt = {}) {
     if (addresses.length === 0) {
       addresses = this.addresses.reduce((acc, address) => acc.concat([address.external, address.change]), [])
     }
-    const info = await this.getBalanceDetail(addresses)
+    const info = await this.getBalanceDetail(addresses, opt)
     return info.balance
   }
 
-  async getUnconfirmedBalance (addresses = []) {
+  async getUnconfirmedBalance (addresses = [], opt = {}) {
     if (addresses.length === 0) {
       addresses = this.addresses.reduce((acc, address) => acc.concat([address.external, address.change]), [])
     }
-    const info = await this.getBalanceDetail(addresses)
+    const info = await this.getBalanceDetail(addresses, opt)
     return info.unconfirmedBalance
   }
 

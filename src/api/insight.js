@@ -18,14 +18,15 @@ class InsightAPI {
     this.apiList = (opt.apiList && opt.apiList.length > 0) ? opt.apiList : API_BASEURLS[network]
   }
 
-  async getBalanceDetail (addresses = [], withUTXO = false) {
+  async getBalanceDetail (addresses = [], opt = {}) {
+    const allow_confirmations = opt.allow_confirmations || 1
     const list = await this.getUTXOs(addresses, 0)
     let balance = new BigNumber(0)
     let unconfirmedBalance = new BigNumber(0)
     let stakingBalance = new BigNumber(0)
     let immatureBalance = new BigNumber(0)
     list.forEach(utxo => {
-      if (utxo.confirmations) {
+      if (utxo.confirmations >= allow_confirmations) {
         if (utxo.isStakingLocked) {
           stakingBalance = stakingBalance.plus(utxo.satoshis)
         } else if (utxo.isImmature) {
@@ -43,7 +44,7 @@ class InsightAPI {
       immatureBalance: immatureBalance.dividedBy(1e8),
       stakingBalance: stakingBalance.dividedBy(1e8)
     }
-    if (withUTXO) {
+    if (opt.withUTXO) {
       info.utxo = list
     }
     return info
