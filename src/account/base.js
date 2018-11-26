@@ -6,7 +6,7 @@ const {BigNumber} = require('bignumber.js')
 const coinSelect = require('coinselect')
 const bitcoinMessage = require('bitcoinjs-message')
 const {
-  HDNode,
+  bip32,
   script
 } = require('bitcoinjs-lib')
 const {
@@ -35,7 +35,7 @@ class BaseAccount {
     this.addressIndex = config.address_index
     this.addresses = config.addresses
     this.network = network
-    this.pubNode = HDNode.fromBase58(this.pubkey, NETWORKS[this.network])
+    this.pubNode = bip32.fromBase58(this.pubkey, NETWORKS[this.network])
 
     let apiClass = this.chooseAPIClass(config.api)
     this.api = new apiClass(this.network)
@@ -61,7 +61,7 @@ class BaseAccount {
   }
 
   getNode (password) {
-    return HDNode.fromBase58(cryptoUtils.decrypt(this.privkey, password), NETWORKS[this.network])
+    return bip32.fromBase58(cryptoUtils.decrypt(this.privkey, password), NETWORKS[this.network])
   }
 
   async addNewAddress (scan = true) {
@@ -227,7 +227,6 @@ class BaseAccount {
       let vin = txBuilder.addInput(input.txid, input.vout)
       let addressPair = this.findAddressPair(input.address)
       let change = (addressPair.external === input.address ? 0 : 1)
-      txBuilder.inputs[vin].value = input.value
       vinSum = vinSum.plus(input.satoshis)
       addressPath.push({
         change,

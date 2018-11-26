@@ -2,6 +2,9 @@ const BaseAccount = require('./base')
 const {BigNumber} = require('bignumber.js')
 const coinSelect = require('coinselect')
 const {
+  payments
+} = require('bitcoinjs-lib')
+const {
   TransactionBuilder
 } = require('bitcoinjs-lib-vips')
 const {
@@ -21,13 +24,16 @@ class BIP44Account extends BaseAccount {
   }
 
   generateAddress (change, index) {
-    return this.pubNode.derive(change).derive(index).getAddress()
+    return payments.p2pkh({
+      pubkey: this.pubNode.derive(change).derive(index).publicKey,
+      network: NETWORKS[this.network]
+    }).address
   }
 
   signTransaction (txBuilder, addressPath, password) {
     let node = this.getNode(password)
     addressPath.forEach((path, i) => {
-      txBuilder.sign(i, node.derive(path.change).derive(path.index).keyPair)
+      txBuilder.sign(i, node.derive(path.change).derive(path.index))
     })
     return txBuilder.build()
   }

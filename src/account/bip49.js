@@ -12,13 +12,17 @@ class BIP49Account extends BaseAccount {
 
   generateAddress (change, index) {
     return this.nodeToSegwitAddress(this.pubNode.derive(change).derive(index))
+
   }
 
   nodeToSegwitAddress (node) {
-    let pubkey = node.keyPair.getPublicKeyBuffer()
-    let redeemScript = lib.script.witnessPubKeyHash.output.encode(lib.crypto.hash160(pubkey))
-    let scriptPubKey = lib.script.scriptHash.output.encode(lib.crypto.hash160(redeemScript))
-    return lib.address.fromOutputScript(scriptPubKey, NETWORKS[this.network])
+    return payments.p2sh({
+      redeem: payments.p2wpkh({
+        pubkey: node.publicKey,
+        network: NETWORKS[this.network]
+      }),
+      network: NETWORKS[this.network]
+    })
   }
 
   signTransaction (txBuilder, addressPath, password) {

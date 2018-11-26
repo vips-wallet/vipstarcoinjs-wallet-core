@@ -1,5 +1,5 @@
 const bip39 = require('bip39')
-const { HDNode } = require('bitcoinjs-lib')
+const { bip32 } = require('bitcoinjs-lib')
 
 const {
   BIP44Account,
@@ -103,8 +103,8 @@ class WalletGroup {
   }
 
   getNode (type, password) {
-    return HDNode.fromSeedHex(
-      cryptoUtils.decrypt(this.seed, password),
+    return bip32.fromSeed(
+      Buffer.from(cryptoUtils.decrypt(this.seed, password), 'hex'),
       NETWORKS[this.network]
     ).deriveHardened(type).deriveHardened(COIN_TYPE)
   }
