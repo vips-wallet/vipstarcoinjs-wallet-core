@@ -262,9 +262,12 @@ class BaseAccount {
   }
 
   signMessage (change, index, message, password) {
-    let pair = this.getNode(password).derive(change).derive(index).keyPair
-    let sign = bitcoinMessage.sign(message, pair.d.toBuffer(32), pair.compressed, NETWORKS[this.network].messagePrefix)
-    return sign.toString('base64')
+    return bitcoinMessage.sign(
+      message,
+      this.getNode(password).derive(change).derive(index).privateKey,
+      true,
+      NETWORKS[this.network].messagePrefix
+    ).toString('base64')
   }
 
   signMessageWithAddress(address, message, password) {
