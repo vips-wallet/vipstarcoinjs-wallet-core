@@ -2,6 +2,13 @@ const crypto = require('crypto')
 const IV = '\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f'
 
 module.exports = {
+  /**
+   * Encrypt data (aes-256-cbc)
+   *
+   * @param {string} data - target data
+   * @param {string} password - encryption password
+   * @return {string} encoded string
+   */
   encrypt: (data, password) => {
     let m = crypto.createHash('sha256')
     m.update(password)
@@ -12,6 +19,13 @@ module.exports = {
     encrypted += cipher.final('base64')
     return encrypted
   },
+  /**
+   * Decrypt data (aes-256-cbc)
+   *
+   * @param {string} data - encoded string
+   * @param {string} passeord - encryption password
+   * @return {string} decoded string
+   */
   decrypt: (data, password) => {
     let m = crypto.createHash('sha256')
     m.update(password)
