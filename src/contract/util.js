@@ -16,11 +16,13 @@ const {
 
 const hash = new Keccak(256)
 
+// Encode keccak256
 function keccak256 (v) {
   hash.reset()
   return hash.update(v).digest()
 }
 
+// Encode contract data
 function encodeData (method, params) {
   const method_hex = keccak256(method).toString('hex').slice(0, 8)
   const types = []
@@ -42,6 +44,7 @@ function encodeData (method, params) {
   return method_hex + abi.rawEncode(types, values).toString('hex')
 }
 
+// Compile contract script
 function compileContractScript (contract_address, data, opt = {}) {
   const gasLimit = new BigNumber(opt.gasLimit ? opt.gasLimit : DEFAULT_GAS_LIMIT)
   const gasPrice = (opt.gasPrice) ? (new BigNumber(opt.gasPrice)).multipliedBy(1e8).dp(0) : new BigNumber(DEFAULT_GAS_PRICE)
@@ -58,7 +61,28 @@ function compileContractScript (contract_address, data, opt = {}) {
 }
 
 module.exports = {
+  /**
+   * Encode keccak256
+   *
+   * @param {string} v - target string
+   * @return {Buffer} encoded data
+   */
   keccak256,
+  /**
+   * Encode contract data
+   *
+   * @param {string} method - contract method name
+   * @param {array} params - contract method parameters pair ([[type, value], [type, value] ...])
+   * @return {string} encoded data
+   */
   encodeData,
+  /**
+   * Compile contract script
+   *
+   * @param {string} contract_address - target contract address
+   * @param {string} data - encoded data
+   * @param {object} opt - {gasLimit: {number} - gas limit, gasPrice: {number} - gas price}
+   * @return {Buffer} compiled script data
+   */
   compileContractScript
 }
