@@ -22,7 +22,28 @@ const {
   OP_RETURN_BYTES
 } = require('../const')
 
+/** Class managing base account **/
 class BaseAccount {
+  /**
+   * Create object
+   *
+   * 'account config object' structure:
+   *   {
+   *     account: {number} - Account number defined by BIP-0032
+   *     label: {string} - account label
+   *     type: {number} - account type (44 or 49)
+   *     privkey: {string} - encrypted account private key (derive path: m/purpose'/coin_type'/account')
+   *     pubkey: {string} - account public key (derive path: m/purpose'/coin_type'/account')
+   *     defaultAddress: {number} - default address index
+   *     address_index: {number} - latest generated address's 'address_index'
+   *     addresses: {array} - generated addresses list
+   *     api: {string} - Remote API name to use
+   *   }
+   *
+   * @param {object} config - account config object
+   * @param {string} network - Network type('mainnet' or 'testnet' or 'regtest')
+   * @return
+   */
   constructor (config, network) {
     this.account = config.account
     this.label = config.label
@@ -43,6 +64,11 @@ class BaseAccount {
     this.rescan = this.rescanAddress()
   }
 
+  /**
+   * Convert to account config object
+   *
+   * @return {object} account config object
+   */
   toJSON () {
     return {
       account: this.account,
@@ -56,14 +82,33 @@ class BaseAccount {
     }
   }
 
+  /**
+   * Convert to account config json string
+   *
+   * @return {string} account config json string
+   */
   stringify () {
     return JSON.stringify(this.toJSON())
   }
 
+  /**
+   * Get 'bip32' library object
+   *
+   * @see {@link https://github.com/bitcoinjs/bip32|bip32 library repository}
+   * @param {string} password - encrypt password
+   * @return {object} 'bip32' library object
+   */
   getNode (password) {
     return bip32.fromBase58(cryptoUtils.decrypt(this.privkey, password), NETWORKS[this.network])
   }
 
+  /**
+   * Generate new address
+   *
+   * @async
+   * @param {bool} scan - scan transactions
+   * @result {string} generated address
+   */
   async addNewAddress (scan = true) {
     let index = this.addressIndex++
     let newAddress = {
@@ -82,6 +127,12 @@ class BaseAccount {
     return newAddress
   }
 
+  /**
+   * Rescan generated addresses's transaction
+   *
+   * @async
+   * @return {bool} rescan result
+   */
   async rescanAddress () {
     let searchAddresses = []
     let latestUsedAddressPair = [].concat(this.addresses).reverse().find(address => address.used === true)
@@ -126,6 +177,12 @@ class BaseAccount {
     }
   }
 
+  /**
+   * Return API management class object
+   *
+   * @param {string} name - API name string
+   * @return {object} API class object
+   */
   chooseAPIClass (name) {
     let apiClass = null
     switch (name) {
@@ -138,30 +195,74 @@ class BaseAccount {
     return apiClass
   }
 
+  /**
+   * Generate address
+   *
+   * @return {string} generated address
+   */
   generateAddress () {
     throw Error('can\'t generate address')
   }
 
+  /**
+   * Generate external(receive) address
+   *
+   * @see {@link https://github.com/bitcoin/bips/blob/b4853407a7c88cfe72974344f6a642691df53f49/bip-0044.mediawiki|BIP-0044}
+   * @param {number} index - BIP44 'address_index'
+   * @return {string} generated address
+   */
   generateReceiveAddress (index) {
     return this.generateAddress(0, index)
   }
 
+  /**
+   * Generate internal(change) address
+   *
+   * @see {@link https://github.com/bitcoin/bips/blob/b4853407a7c88cfe72974344f6a642691df53f49/bip-0044.mediawiki|BIP-0044}
+   * @param {number} index - BIP44 'address_index'
+   * @return {string} generated address
+   */
   generateChangeAddress (index) {
     return this.generateAddress(1, index)
   }
 
+  /**
+   * Get default external(receive) address
+   *
+   * @return {string} default external(receive) address
+   */
   getDefaultReceiveAddress () {
     return this.addresses[this.defaultAddress].external
   }
 
+  /**
+   * Get default internal(change) address
+   *
+   * @return {string} default internal(change) address
+   */
   getDefaultChangeAddress () {
     return this.addresses[this.defaultAddress].change
   }
 
+  /**
+   * Find address pair
+   *
+   * @param {string} address - VIPSTARCOIN address
+   * @return {object} address pair
+   */
   findAddressPair (address) {
     return this.addresses.find(addr => (addr.external === address || addr.change === address))
   }
 
+  /**
+   * Build transaction data
+   *
+   * @async
+   * @param {string} to - VIPSTARCOIN address
+   * @param {number} amount - sending amount
+   * @param {object} opt - option object
+   * @return {object} transaction data
+   */
   async buildTransactionData (to, amount, opt = {}) {
     let txBuilder = new TransactionBuilder(NETWORKS[this.network])
     txBuilder.setVersion(2)
@@ -249,6 +350,17 @@ class BaseAccount {
     }
   }
 
+  /**
+   * Build 'sendto' contract transaction data
+   * (only BIP44 account)
+   *
+   * @async
+   * @param {string} contract_address - contract address
+   * @param {string} sender_address - VIPSTARCOIN address
+   * @param {number} data - contract data
+   * @param {object} opt - option object
+   * @return {object} transaction data
+   */
   async buildSendToContractTransactionData (contract_address, sender_address, data, opt) {
     return Promise.reject(new Error('This account is not BIP44 Account'))
   }
@@ -261,6 +373,16 @@ class BaseAccount {
 
   }
 
+  /**
+   * Sign message
+   *
+   * @see {@link https://github.com/bitcoin/bips/blob/b4853407a7c88cfe72974344f6a642691df53f49/bip-0044.mediawiki|BIP-0044}
+   * @param {number} change - BIP44 'change'
+   * @param {number} index - BIP44 'address_index'
+   * @param {string} message - message
+   * @param {string} password - encrypted password
+   * @return {string} sign string
+   */
   signMessage (change, index, message, password) {
     return bitcoinMessage.sign(
       message,
@@ -270,15 +392,54 @@ class BaseAccount {
     ).toString('base64')
   }
 
+  /**
+   * Sign message (with address)
+   *
+   * @param {string} address - VIPSTARCOIN address
+   * @param {string} message - message
+   * @param {string} password - encrypted password
+   * @return {string} sign string
+   */
   signMessageWithAddress(address, message, password) {
     let addressPair = this.findAddressPair(address)
     return this.signMessage((address === addressPair.external ? 0 : 1), addressPair.index, message, password)
   }
 
+  /**
+   * Verify signed message
+   *
+   * @param {string} message - message
+   * @param {string} address - VIPSTARCOIN address
+   * @param {string} sign - sign string
+   * @return {bool} verify result
+   */
   verifySignedMessage (message, address, sign) {
     return bitcoinMessage.verify(message, address, sign, NETWORKS[this.network].messagePrefix)
   }
 
+  /**
+   * Get balance
+   *
+   * 'opt' structure:
+   *   {
+   *     allow_confirmations: {number} - required confirmation count
+   *     withUTXO: {bool} - include UTXO list switch
+   *   }
+   *
+   * result structure:
+   *   {
+   *     balance: {BigNumber} - confirmed balance
+   *     unconfirmedBalance: {BigNumber} - unconfirmed balance
+   *     immatureBalance: {BigNumber} - immature balance
+   *     stakingBalance: {BigNumber} - staking balance
+   *     utxo: {array} - UTXO list
+   *   }
+   *
+   * @async
+   * @param {array} addresses - address list
+   * @param {object} opt - option object
+   * @return {object} balance detail object
+   */
   async getBalanceDetail (addresses = [], opt = {}) {
     if (addresses.length === 0) {
       addresses = this.addresses.reduce((acc, address) => acc.concat([address.external, address.change]), [])
@@ -286,6 +447,20 @@ class BaseAccount {
     return await this.api.getBalanceDetail(addresses, opt)
   }
 
+  /**
+   * Get confirmed balance
+   *
+   * 'opt' structure:
+   *   {
+   *     allow_confirmations: {number} - required confirmation count
+   *     withUTXO: {bool} - include UTXO list switch
+   *   }
+   *
+   * @async
+   * @param {array} addresses - address list
+   * @param {object} opt - option object
+   * @return {BigNumber} confirmed balance
+   */
   async getBalance (addresses = [], opt = {}) {
     if (addresses.length === 0) {
       addresses = this.addresses.reduce((acc, address) => acc.concat([address.external, address.change]), [])
@@ -294,6 +469,20 @@ class BaseAccount {
     return info.balance
   }
 
+  /**
+   * Get unconfirmed balance
+   *
+   * 'opt' structure:
+   *   {
+   *     allow_confirmations: {number} - required confirmation count
+   *     withUTXO: {bool} - include UTXO list switch
+   *   }
+   *
+   * @async
+   * @param {array} addresses - address list
+   * @param {object} opt - option object
+   * @return {BigNumber} unconfirmed balance
+   */
   async getUnconfirmedBalance (addresses = [], opt = {}) {
     if (addresses.length === 0) {
       addresses = this.addresses.reduce((acc, address) => acc.concat([address.external, address.change]), [])
@@ -302,6 +491,16 @@ class BaseAccount {
     return info.unconfirmedBalance
   }
 
+  /**
+   * Get transaction list
+   *
+   * @async
+   * @param {array} addresses - address list
+   * @param {array} txs - transaction list
+   * @param {number} from - start length
+   * @param {number} to - end length
+   * @return {array} transaction list
+   */
   async getTXsAll (addresses = [], txs = [], from = 0, to = 10) {
     if (addresses.length === 0) {
       addresses = this.addresses.reduce((acc, address) => acc.concat([address.external, address.change]), [])
@@ -309,6 +508,15 @@ class BaseAccount {
     return await this.api.getTXsAll(addresses, txs, from, to)
   }
 
+  /**
+   * Get transaction list
+   *
+   * @async
+   * @param {array} addresses - address list
+   * @param {number} from - start length
+   * @param {number} to - end length
+   * @return {array} transaction list
+   */
   async getTXs (addresses = [], from = 0, to = 10) {
     if (addresses.length === 0) {
       addresses = this.addresses.reduce((acc, address) => acc.concat([address.external, address.change]), [])
@@ -316,6 +524,33 @@ class BaseAccount {
     return await this.api.getTXs(addresses, from, to)
   }
 
+  /**
+   * Get UTXO list
+   *
+   * 'UTXO object' structure:
+   *   {
+   *     address: {string} - address
+   *     txid: {string} - txid
+   *     vout: {number} - vout index
+   *     scriptPubKey: {string} - scriptPubKey string
+   *     amount: {number} - amount value
+   *     satoshis: {number} - amount value (unit: satoshi)
+   *     isCoinBase: {bool} - if it is coinbase transaction -> true | otherwise -> false
+   *     isStake:: {bool} - if it is staking transaction -> true | otherwise -> false
+   *     height: {number} - block height
+   *     confirmations: {number} - confirmation count
+   *     pos: {number} - same 'vout'
+   *     value: {number} - same 'satoshis'
+   *     hash: {string} - same 'txid'
+   *     isStakingLocked: {bool} - if it is staking locked -> true | otherwise -> false
+   *     isImmature: {bool} - if it is immature -> true | otherwise -> false
+   *   }
+   *
+   * @async
+   * @param {array} addresses - address list
+   * @param {number} allow_confirmations - required confirmation count
+   * @return {array} UTXO object list
+   */
   async getUTXOs (addresses = [], allow_confirmations = 1) {
     if (addresses.length === 0) {
       addresses = this.addresses.reduce((acc, address) => acc.concat([address.external, address.change]), [])
@@ -323,34 +558,122 @@ class BaseAccount {
     return await this.api.getUTXOs(addresses, allow_confirmations)
   }
 
+  /**
+   * Get all ERC20 token balance
+   * (only BIP44 account)
+   *
+   * 'token balance object' structure:
+   *   {
+   *     amount: {string} - amaunt value
+   *     address: {string} - address
+   *     address_eth: {string} - address(hex)
+   *     contract: {object} {
+   *       tx_hash: {string} - txid
+   *       vout_idx: {number} - vout index
+   *       block_height: {number} - block height
+   *       contract_address: {string} - contract address (hex)
+   *       contract_address_base: {string} - contract address (VIPSTARCOIN address)
+   *       created_at: {string} - token create date
+   *       decimals: {string} - token decimals
+   *       exception: {bool}
+   *       name: {string} - token name
+   *       symbol: {string} - token symbol
+   *       total_supply: {string} token total supply
+   *     }
+   *   }
+   *
+   * @async
+   * @param {array} addresses - address list
+   * @return {array} all token balance object list
+   */
   async getTokenBalance (addresses = []) {
     return Promise.reject(new Error('This account is not BIP44 Account'))
   }
 
+  /**
+   * Get all ERC20 token transaction list
+   * (only BIP44 account)
+   *
+   * @async
+   * @param {string} contract_address - contract address
+   * @param {array} addresses - address list
+   * @param {array} txs - transaction list
+   * @param {number} from - start length
+   * @param {number} to - end length
+   * @return {array} transaction list
+   */
   async getTokenTXsAll (contract_address, addresses = [], txs = [], from = 0, to = 100) {
     return Promise.reject(new Error('This account is not BIP44 Account'))
   }
 
+  /**
+   * Get ERC20 token transaction list
+   * (only BIP44 account)
+   *
+   * @async
+   * @param {string} contract_address - contract address
+   * @param {array} addresses - address list
+   * @param {number} from - start length
+   * @param {number} to - end length
+   * @return {array} transaction list
+   */
   async getTokenTXs (contract_address, addresses = [], from = 0, to = 100) {
     return Promise.reject(new Error('This account is not BIP44 Account'))
   }
 
+  /**
+   * Call contract function
+   * (only BIP44 account)
+   *
+   * @async
+   * @param {string} address - contract address
+   * @param {string} data - call contract data
+   * @return {object} call contract result
+   */
   async callContract (address, data) {
     return await this.api.callContract(address, data)
   }
 
+  /**
+   * Send raw transaction
+   *
+   * @async
+   * @param {string} rawtx - raw signed transaction data
+   * @return {object} transaction result
+   */
   async sendRawTransaction (tx) {
     return await this.api.sendRawTransaction(tx)
   }
 
+  /**
+   * Get transaction receipt
+   *
+   * @async
+   * @param {string} txid - txid
+   * @return {object} transaction receipt result
+   */
   async getTransactionReceipt (txid) {
     return await this.api.getTransactionReceipt(txid)
   }
 
+  /**
+   * Get estimate fee (per kB)
+   *
+   * @async
+   * @param {number} nblocks - block count
+   * @return {BigNumber} fee rate
+   */
   async estimateFee (nblocks = 6) {
     return await this.api.estimateFee(nblocks)
   }
 
+  /**
+   * Get estimate fee (per byte)
+   *
+   * @async
+   * @param {number} nblocks - block count
+   * @return {BigNumber} fee rate
+   */
   async estimateFeePerByte (nblocks = 6) {
     return await this.api.estimateFeePerByte(nblocks)
   }

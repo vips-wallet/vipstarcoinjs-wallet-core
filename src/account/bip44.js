@@ -15,7 +15,28 @@ const {
 } = require('../const')
 const contractUtil = require('../contract/util')
 
+/** Class managing BIP-0044 account **/
 class BIP44Account extends BaseAccount {
+  /**
+   * Create object
+   *
+   * 'account config object' structure:
+   *   {
+   *     account: {number} - Account number defined by BIP-0032
+   *     label: {string} - account label
+   *     type: {number} - account type (only 44)
+   *     privkey: {string} - encrypted account private key (derive path: m/purpose'/coin_type'/account')
+   *     pubkey: {string} - account public key (derive path: m/purpose'/coin_type'/account')
+   *     defaultAddress: {number} - default address index
+   *     address_index: {number} - latest generated address's 'address_index'
+   *     addresses: {array} - generated addresses list
+   *     api: {string} - Remote API name to use
+   *   }
+   *
+   * @param {object} config - account config object
+   * @param {string} network - Network type('mainnet' or 'testnet' or 'regtest')
+   * @return
+   */
   constructor (config, network) {
     super(config, network)
     this.type = 44
@@ -23,6 +44,14 @@ class BIP44Account extends BaseAccount {
     this.nativeSegwit = false
   }
 
+  /**
+   * Generate address
+   *
+   * @see {@link https://github.com/bitcoin/bips/blob/b4853407a7c88cfe72974344f6a642691df53f49/bip-0044.mediawiki|BIP-0044}
+   * @param {number} change - BIP44 'change'
+   * @param {number} index - BIP44 'address_index'
+   * @return {string} generated address
+   */
   generateAddress (change, index) {
     return payments.p2pkh({
       pubkey: this.pubNode.derive(change).derive(index).publicKey,
@@ -30,6 +59,14 @@ class BIP44Account extends BaseAccount {
     }).address
   }
 
+  /**
+   * Sign transaction
+   *
+   * @param {TransactionBuilder} txBuilder - TransactionBuilder object
+   * @param {array} addressPath - vin addresses
+   * @param {string} password - encrypted password
+   * @return {Transaction} signed Transaction object
+   */
   signTransaction (txBuilder, addressPath, password) {
     let node = this.getNode(password)
     addressPath.forEach((path, i) => {
@@ -38,6 +75,33 @@ class BIP44Account extends BaseAccount {
     return txBuilder.build()
   }
 
+  /**
+   * Get all ERC20 token balance
+   *
+   * 'token balance object' structure:
+   *   {
+   *     amount: {string} - amaunt value
+   *     address: {string} - address
+   *     address_eth: {string} - address(hex)
+   *     contract: {object} {
+   *       tx_hash: {string} - txid
+   *       vout_idx: {number} - vout index
+   *       block_height: {number} - block height
+   *       contract_address: {string} - contract address (hex)
+   *       contract_address_base: {string} - contract address (VIPSTARCOIN address)
+   *       created_at: {string} - token create date
+   *       decimals: {string} - token decimals
+   *       exception: {bool}
+   *       name: {string} - token name
+   *       symbol: {string} - token symbol
+   *       total_supply: {string} token total supply
+   *     }
+   *   }
+   *
+   * @async
+   * @param {array} addresses - address list
+   * @return {array} all token balance object list
+   */
   async getTokenBalance (addresses = []) {
     if (addresses.length === 0) {
       addresses = this.addresses.reduce((acc, address) => acc.concat([address.external, address.change]), [])
@@ -45,6 +109,17 @@ class BIP44Account extends BaseAccount {
     return await this.api.getTokenBalance(addresses)
   }
 
+  /**
+   * Get all ERC20 token transaction list
+   *
+   * @async
+   * @param {string} contract_address - contract address
+   * @param {array} addresses - address list
+   * @param {array} txs - transaction list
+   * @param {number} from - start length
+   * @param {number} to - end length
+   * @return {array} transaction list
+   */
   async getTokenTXsAll (contract_address, addresses = [], txs = [], from = 0, to = 10) {
     if (addresses.length === 0) {
       addresses = this.addresses.reduce((acc, address) => acc.concat([address.external, address.change]), [])
@@ -52,6 +127,16 @@ class BIP44Account extends BaseAccount {
     return await this.api.getTokenTXsAll(contract_address, addresses, txs, from, to)
   }
 
+  /**
+   * Get ERC20 token transaction list
+   *
+   * @async
+   * @param {string} contract_address - contract address
+   * @param {array} addresses - address list
+   * @param {number} from - start length
+   * @param {number} to - end length
+   * @return {array} transaction list
+   */
   async getTokenTXs (contract_address, addresses = [], from = 0, to = 100) {
     if (addresses.length === 0) {
       addresses = this.addresses.reduce((acc, address) => acc.concat([address.external, address.change]), [])
@@ -59,6 +144,16 @@ class BIP44Account extends BaseAccount {
     return await this.api.getTokenTXs(contract_address, addresses, from, to)
   }
 
+  /**
+   * Build 'sendto' contract transaction data
+   *
+   * @async
+   * @param {string} contract_address - contract address
+   * @param {string} sender_address - VIPSTARCOIN address
+   * @param {number} data - contract data
+   * @param {object} opt - option object
+   * @return {object} transaction data
+   */
   async buildSendToContractTransactionData (contract_address, sender_address, data, opt = {}) {
     const txBuilder = new TransactionBuilder(NETWORKS[this.network])
     txBuilder.setVersion(2)
