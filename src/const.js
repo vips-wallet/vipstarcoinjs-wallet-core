@@ -85,15 +85,26 @@ const TOKEN_METHOD_HASHES = {
 }
 
 module.exports = {
+  // Network Parameters
   NETWORKS,
+  // Default API base url list
   API_BASEURLS,
+  // Default timeout (milliseconds)
   API_DEFAULT_TIMEOUT_MSEC,
+  // BIP-0044 Coin type (see: https://github.com/satoshilabs/slips/blob/master/slip-0044.md)
   COIN_TYPE,
+  // COINBASE maturity count
   COINBASE_MATURITY,
+  // Address gap limit (see: https://github.com/bitcoin/bips/blob/b4853407a7c88cfe72974344f6a642691df53f49/bip-0044.mediawiki#Address_gap_limit)
   GAP_LIMIT,
+  // OP_RETURN max bytes
   OP_RETURN_BYTES,
+  // VIPSTARCOIN opcodes
   OPS,
+  // Default gas limit (sat)
   DEFAULT_GAS_LIMIT,
+  // Default gas price (sat)
   DEFAULT_GAS_PRICE,
+  // Standard ERC's method hashes
   TOKEN_METHOD_HASHES
 }
