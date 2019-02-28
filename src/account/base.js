@@ -198,9 +198,12 @@ class BaseAccount {
   /**
    * Generate address
    *
+   * @see {@link https://github.com/bitcoin/bips/blob/b4853407a7c88cfe72974344f6a642691df53f49/bip-0044.mediawiki|BIP-0044}
+   * @param {number} change - BIP44 'change'
+   * @param {number} index - BIP44 'address_index'
    * @return {string} generated address
    */
-  generateAddress () {
+  generateAddress (change, index) {
     throw Error('can\'t generate address')
   }
 
