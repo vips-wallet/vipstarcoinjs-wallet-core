@@ -13,7 +13,7 @@
     "url": "https://github.com/vips-wallet/vipstarcoinjs-wallet-core.git"
   },
   "dependencies": {
-    "axios": "^0.19.0",
+    "axios": "^0.21.1",
     "bignumber.js": "^7.0.2",
     "bip21": "^2.0.2",
     "bip39": "^2.5.0",
