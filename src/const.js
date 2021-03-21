@@ -39,6 +39,7 @@ const NETWORKS = {
 
 const API_BASEURLS = {
   mainnet: [
+    "https://insight.vipstarcoin.jp/api",
     "https://mainnet.vipstarco.in/api",
     "https://api.vipstarco.in/api",
     "https://insight.vipstarco.in/api"
